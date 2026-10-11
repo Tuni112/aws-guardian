@@ -53,6 +53,14 @@ class FakeClient:
         return call
 
 
+FLOW_LOG_BUCKET = "arn:aws:s3:::aws-guardian-flow-logs-111122223333"
+
+
+@pytest.fixture(autouse=True)
+def flow_log_destination(monkeypatch):
+    monkeypatch.setenv("FLOW_LOG_BUCKET_ARN", FLOW_LOG_BUCKET)
+
+
 @pytest.fixture
 def calls():
     return []

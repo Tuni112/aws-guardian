@@ -34,8 +34,9 @@ resource "aws_iam_role_policy" "base" {
   policy = data.aws_iam_policy_document.base.json
 }
 
-# Granted only in enforce mode. Each action is the single call one rule's
-# remediation makes; there are no wildcards on actions and no read access.
+# Granted only in enforce mode. Each action is a call one rule's remediation
+# makes. There are no wildcard actions, and the only read is the flow log
+# lookup that stops Guardian enabling flow logs twice on the same VPC.
 data "aws_iam_policy_document" "remediate" {
   statement {
     sid = "RestoreLoggingAndDetection"
@@ -43,6 +44,16 @@ data "aws_iam_policy_document" "remediate" {
       "cloudtrail:StartLogging",
       "guardduty:UpdateDetector",
       "config:StartConfigurationRecorder",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "EnableVpcFlowLogs"
+    actions = [
+      "ec2:DescribeFlowLogs",
+      "ec2:CreateFlowLogs",
+      "logs:CreateLogDelivery",
     ]
     resources = ["*"]
   }

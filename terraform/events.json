@@ -12,6 +12,8 @@
     ],
     "ec2.amazonaws.com": [
       "AuthorizeSecurityGroupIngress",
+      "CreateDefaultVpc",
+      "CreateVpc",
       "DeleteFlowLogs",
       "DisableEbsEncryptionByDefault",
       "ModifyImageAttribute",

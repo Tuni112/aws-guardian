@@ -52,11 +52,12 @@ resource "aws_lambda_function" "guardian" {
 
   environment {
     variables = {
-      REMEDIATION_MODE   = var.remediation_mode
-      REMEDIATE_RULES    = join(",", var.remediate_rules)
-      TRUSTED_PRINCIPALS = join(",", var.trusted_principals)
-      ALERT_TOPIC_ARN    = aws_sns_topic.alerts.arn
-      GUARDIAN_ROLE_ARN  = aws_iam_role.guardian.arn
+      REMEDIATION_MODE    = var.remediation_mode
+      REMEDIATE_RULES     = join(",", var.remediate_rules)
+      TRUSTED_PRINCIPALS  = join(",", var.trusted_principals)
+      ALERT_TOPIC_ARN     = aws_sns_topic.alerts.arn
+      GUARDIAN_ROLE_ARN   = aws_iam_role.guardian.arn
+      FLOW_LOG_BUCKET_ARN = aws_s3_bucket.flow_logs.arn
     }
   }
 

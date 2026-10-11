@@ -4,10 +4,10 @@ Real-time detection and automatic remediation of high-risk changes in an AWS acc
 
 When someone opens SSH to the internet, makes a bucket public, attaches `AdministratorAccess`, or turns off CloudTrail, Guardian sees the API call, alerts on it, and (in enforce mode) reverses it.
 
-- **34 detections** across logging, S3, network, data exposure, IAM and root usage. 19 of them fix the problem automatically; the rest alert only. Full list: [docs/detections.md](docs/detections.md).
+- **35 detections** across logging, S3, network, data exposure, IAM and root usage. 20 of them fix the problem automatically; the rest alert only. Full list: [docs/detections.md](docs/detections.md).
 - **Mapped to MITRE ATT&CK** (cloud matrix), one or more technique ids per rule.
 - **One `terraform apply`** to deploy: trail, event routing, Lambda, least-privilege role, alert topic and a cost budget.
-- **88 unit tests**, each rule tested with an event that must fire and benign look-alikes that must not.
+- **92 unit tests**, each rule tested with an event that must fire and benign look-alikes that must not.
 - **An attack simulator** that performs the real misconfigurations in a sandbox account and measures the response.
 
 ## How it works
@@ -35,7 +35,7 @@ flowchart LR
 
 - **Three modes.** `off` alerts only, `dry_run` (the default) also says what it would fix, `enforce` fixes it. Enforce can be limited to named rules with `remediate_rules`.
 - **Remediation permissions exist only in enforce mode.** In the other modes the Lambda role can write its own logs and publish alerts, and nothing else.
-- **No wildcard actions and no read access.** Remediation is driven entirely by the event, so the role holds one write action per fix and cannot read data.
+- **No wildcard actions and almost no read access.** Remediation is driven by the event, so the role holds one write action per fix. Its only read is a flow log lookup, and it cannot read data.
 - **Narrow fixes.** Opening SSH to the world revokes that one ingress rule, not the security group. A public bucket policy is neutralised by re-applying the public access block, not by deleting the policy.
 - **No feedback loops.** Guardian ignores API calls made by its own role, so undoing a change never triggers another finding.
 - **Denied attempts are ignored**, except where the attempt is the signal (leaving the AWS Organization, a failed root sign-in).
@@ -82,6 +82,7 @@ PYTHONPATH=src python -m guardian.manifest markdown > docs/detections.md
 
 ## Limitations
 
+- **It is detective and corrective, not preventive.** Nothing is blocked up front: the change happens, then Guardian reverses it. Blocking belongs in service control policies and permission boundaries.
 - **It reacts to changes; it does not audit existing state.** A bucket that was already public before deployment is not found. A scheduled posture scan is the planned next step.
 - **Management events only.** Data events such as S3 object reads are not inspected.
 - **Single account, single region.** Regional services (EC2, RDS, KMS) are only covered in the deployed region. Covering more means deploying per region or forwarding events to one bus.

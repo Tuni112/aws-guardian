@@ -83,6 +83,11 @@ FIRES = [
         None,
     ),
     (
+        "LOG-008",
+        envelope(make_event("ec2.amazonaws.com", "CreateVpc", responseElements={"vpc": {"vpcId": "vpc-0abc"}})),
+        "create_flow_logs",
+    ),
+    (
         "S3-001",
         envelope(
             make_event(
@@ -502,3 +507,43 @@ def test_revoke_only_touches_the_world_cidr(clients, calls):
         "GroupId": "sg-0abc",
         "IpPermissions": [{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "0.0.0.0/0"}]}],
     }
+
+
+def test_flow_logs_are_not_duplicated_when_already_enabled(calls):
+    """Terraform often adds flow logs seconds after creating the VPC."""
+    from conftest import FakeClient
+    from guardian.models import Clients
+
+    class Ec2WithFlowLogs(FakeClient):
+        def describe_flow_logs(self, **kwargs):
+            return {"FlowLogs": [{"FlowLogId": "fl-1"}]}
+
+    clients = Clients(lambda service, region: Ec2WithFlowLogs(service, calls))
+    env = envelope(make_event("ec2.amazonaws.com", "CreateVpc", responseElements={"vpc": {"vpcId": "vpc-0abc"}}))
+    (finding,) = evaluate(env, ENFORCING, clients)
+    assert calls == [] and not finding.remediated
+    assert "already enabled" in finding.remediation
+
+
+def test_flow_logs_need_a_destination(monkeypatch, clients, calls):
+    monkeypatch.delenv("FLOW_LOG_BUCKET_ARN")
+    env = envelope(make_event("ec2.amazonaws.com", "CreateVpc", responseElements={"vpc": {"vpcId": "vpc-0abc"}}))
+    (finding,) = evaluate(env, ENFORCING, clients)
+    assert calls == [] and not finding.remediated
+
+
+def test_flow_logs_go_to_the_configured_bucket(clients, calls):
+    from conftest import FLOW_LOG_BUCKET
+
+    env = envelope(make_event("ec2.amazonaws.com", "CreateVpc", responseElements={"vpc": {"vpcId": "vpc-0abc"}}))
+    evaluate(env, ENFORCING, clients)
+    create = [kwargs for _, method, kwargs in calls if method == "create_flow_logs"]
+    assert create == [
+        {
+            "ResourceIds": ["vpc-0abc"],
+            "ResourceType": "VPC",
+            "TrafficType": "ALL",
+            "LogDestinationType": "s3",
+            "LogDestination": FLOW_LOG_BUCKET,
+        }
+    ]

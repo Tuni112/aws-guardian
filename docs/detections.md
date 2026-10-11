@@ -2,7 +2,7 @@
 
 Generated from the rule registry with `python -m guardian.manifest markdown`. Do not edit by hand.
 
-34 rules.
+35 rules.
 
 | ID | Detection | Severity | ATT&CK | Trigger | Automatic response |
 |---|---|---|---|---|---|
@@ -13,6 +13,7 @@ Generated from the rule registry with `python -m guardian.manifest markdown`. Do
 | LOG-005 | GuardDuty disabled or deleted | CRITICAL | T1562.001 | guardduty: DeleteDetector, UpdateDetector | Re-enable the detector |
 | LOG-006 | AWS Config recorder stopped or deleted | HIGH | T1562.001 | config: StopConfigurationRecorder, DeleteConfigurationRecorder | Restart the recorder |
 | LOG-007 | VPC flow logs deleted | HIGH | T1562.008 | ec2: DeleteFlowLogs | Alert only |
+| LOG-008 | VPC created without flow logs | MEDIUM | T1562.008 | ec2: CreateVpc, CreateDefaultVpc | Enable flow logs for all traffic to the Guardian log bucket |
 | S3-001 | S3 bucket public access block removed | HIGH | T1530 | s3: PutBucketPublicAccessBlock, DeleteBucketPublicAccessBlock | Re-apply the bucket public access block |
 | S3-002 | S3 bucket ACL made public | CRITICAL | T1530 | s3: PutBucketAcl | Reset the bucket ACL to private |
 | S3-003 | S3 bucket policy allows everyone | CRITICAL | T1530 | s3: PutBucketPolicy | Re-apply the bucket public access block, which overrides the public policy |

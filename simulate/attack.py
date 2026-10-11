@@ -88,6 +88,21 @@ class Sandbox:
     def sg_all(self):
         return self._sg_scenario({"IpProtocol": "-1"})
 
+    def vpc_flow(self):
+        vpc = self.ec2.create_vpc(CidrBlock="10.251.0.0/24")["Vpc"]["VpcId"]
+
+        def flow_logs():
+            return self.ec2.describe_flow_logs(Filters=[{"Name": "resource-id", "Values": [vpc]}])["FlowLogs"]
+
+        def cleanup():
+            # Deleting the flow log raises a LOG-007 alert. That is expected.
+            ids = [f["FlowLogId"] for f in flow_logs()]
+            if ids:
+                self.ec2.delete_flow_logs(FlowLogIds=ids)
+            ignore_missing(self.ec2.delete_vpc, VpcId=vpc)
+
+        return f"vpc {vpc}", lambda: None, lambda: bool(flow_logs()), cleanup
+
     # ── s3 ───────────────────────────────────────────────────────────────
     def s3_block(self):
         bucket = f"{self.name}-sim-{self.account}-{self.suffix}"
@@ -205,6 +220,7 @@ SCENARIOS = {
     "sg-ssh": ("NET-001", "Open SSH to the internet", Sandbox.sg_ssh),
     "sg-db": ("NET-002", "Open PostgreSQL to the internet", Sandbox.sg_db),
     "sg-all": ("NET-003", "Open every port to the internet", Sandbox.sg_all),
+    "vpc-flow": ("LOG-008", "Create a VPC with no flow logs", Sandbox.vpc_flow),
     "s3-block": ("S3-001", "Delete a bucket's public access block", Sandbox.s3_block),
     "iam-admin": ("IAM-001", "Attach AdministratorAccess to a user", Sandbox.iam_admin),
     "iam-inline": ("IAM-002", "Add an inline allow-everything policy", Sandbox.iam_inline),

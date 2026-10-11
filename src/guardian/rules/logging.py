@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from ..models import CRITICAL, HIGH, Clients, Detection, Rule
-from ..util import items, params
+import os
+
+from ..models import CRITICAL, HIGH, MEDIUM, Clients, Detection, Rule
+from ..util import items, params, response
 
 CLOUDTRAIL = "cloudtrail.amazonaws.com"
 GUARDDUTY = "guardduty.amazonaws.com"
@@ -93,6 +95,32 @@ def flow_logs_deleted(event: dict):
     return Detection(", ".join(filter(None, ids)) or "unknown-flow-log", "VPC flow logs were deleted")
 
 
+def vpc_without_flow_logs(event: dict):
+    vpc = (response(event).get("vpc") or {}).get("vpcId")
+    if not vpc:
+        return None
+    return Detection(vpc, "VPC created with no flow logs, so its network traffic is not recorded")
+
+
+def enable_flow_logs(event: dict, detection: Detection, clients: Clients) -> str:
+    destination = os.environ.get("FLOW_LOG_BUCKET_ARN", "")
+    if not destination:
+        return "none: no flow log destination is configured"
+    ec2 = clients.get("ec2", event.get("awsRegion"))
+    # Whoever created the VPC may have added flow logs in the seconds since.
+    existing = ec2.describe_flow_logs(Filters=[{"Name": "resource-id", "Values": [detection.resource]}])
+    if (existing or {}).get("FlowLogs"):
+        return "none: flow logs were already enabled by the time Guardian checked"
+    ec2.create_flow_logs(
+        ResourceIds=[detection.resource],
+        ResourceType="VPC",
+        TrafficType="ALL",
+        LogDestinationType="s3",
+        LogDestination=destination,
+    )
+    return "enabled flow logs for all traffic, delivered to the Guardian log bucket"
+
+
 RULES = [
     Rule(
         id="LOG-001",
@@ -162,5 +190,16 @@ RULES = [
         events=("DeleteFlowLogs",),
         mitre=("T1562.008",),
         evaluate=flow_logs_deleted,
+    ),
+    Rule(
+        id="LOG-008",
+        title="VPC created without flow logs",
+        severity=MEDIUM,
+        source=EC2,
+        events=("CreateVpc", "CreateDefaultVpc"),
+        mitre=("T1562.008",),
+        evaluate=vpc_without_flow_logs,
+        remediate=enable_flow_logs,
+        remediation="Enable flow logs for all traffic to the Guardian log bucket",
     ),
 ]
