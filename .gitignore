@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+terraform/.terraform/
+terraform/.build/
+terraform/*.tfstate*
+terraform/terraform.tfvars
+terraform/.terraform.lock.hcl
+simulate/results*.json

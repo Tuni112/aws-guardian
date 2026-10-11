@@ -1,0 +1,69 @@
+{
+  "api": {
+    "cloudtrail.amazonaws.com": [
+      "DeleteTrail",
+      "PutEventSelectors",
+      "StopLogging",
+      "UpdateTrail"
+    ],
+    "config.amazonaws.com": [
+      "DeleteConfigurationRecorder",
+      "StopConfigurationRecorder"
+    ],
+    "ec2.amazonaws.com": [
+      "AuthorizeSecurityGroupIngress",
+      "DeleteFlowLogs",
+      "DisableEbsEncryptionByDefault",
+      "ModifyImageAttribute",
+      "ModifySnapshotAttribute"
+    ],
+    "guardduty.amazonaws.com": [
+      "DeleteDetector",
+      "UpdateDetector"
+    ],
+    "iam.amazonaws.com": [
+      "AttachGroupPolicy",
+      "AttachRolePolicy",
+      "AttachUserPolicy",
+      "CreateAccessKey",
+      "CreateLoginProfile",
+      "CreateRole",
+      "DeactivateMFADevice",
+      "DeleteAccountPasswordPolicy",
+      "PutGroupPolicy",
+      "PutRolePolicy",
+      "PutUserPolicy",
+      "UpdateAccountPasswordPolicy",
+      "UpdateAssumeRolePolicy",
+      "UpdateLoginProfile"
+    ],
+    "kms.amazonaws.com": [
+      "DisableKey",
+      "ScheduleKeyDeletion"
+    ],
+    "lambda.amazonaws.com": [
+      "AddPermission20150331",
+      "AddPermission20150331v2"
+    ],
+    "organizations.amazonaws.com": [
+      "LeaveOrganization"
+    ],
+    "rds.amazonaws.com": [
+      "CreateDBInstance",
+      "ModifyDBClusterSnapshotAttribute",
+      "ModifyDBInstance",
+      "ModifyDBSnapshotAttribute"
+    ],
+    "s3.amazonaws.com": [
+      "DeleteAccountPublicAccessBlock",
+      "DeleteBucketPublicAccessBlock",
+      "PutAccountPublicAccessBlock",
+      "PutBucketAcl",
+      "PutBucketPolicy",
+      "PutBucketPublicAccessBlock"
+    ]
+  },
+  "signin": [
+    "ConsoleLogin"
+  ]
+}

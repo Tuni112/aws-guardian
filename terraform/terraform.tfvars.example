@@ -1,0 +1,2 @@
+alert_email      = "you@example.com"
+remediation_mode = "dry_run" # switch to "enforce" once the alerts look right
