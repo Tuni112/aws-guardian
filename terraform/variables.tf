@@ -55,3 +55,15 @@ variable "log_retention_days" {
   type    = number
   default = 30
 }
+
+variable "scan_schedule" {
+  description = "How often the posture scan runs, as an EventBridge schedule expression. Set to \"\" to leave the scan out."
+  type        = string
+  default     = "rate(24 hours)"
+}
+
+variable "scan_regions" {
+  description = "Regions the posture scan covers. Empty means every region enabled in the account."
+  type        = list(string)
+  default     = []
+}

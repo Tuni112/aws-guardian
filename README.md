@@ -7,7 +7,8 @@ When someone opens SSH to the internet, makes a bucket public, attaches `Adminis
 - **35 detections** across logging, S3, network, data exposure, IAM and root usage. 20 of them fix the problem automatically; the rest alert only. Full list: [docs/detections.md](docs/detections.md).
 - **Mapped to MITRE ATT&CK** (cloud matrix), one or more technique ids per rule.
 - **One `terraform apply`** to deploy: trail, event routing, Lambda, least-privilege role, alert topic and a cost budget.
-- **93 unit tests**, each rule tested with an event that must fire and benign look-alikes that must not.
+- **A scheduled posture scan** with 16 read-only checks for what was already misconfigured before the event rules were deployed.
+- **127 unit tests**, each rule and check tested with a case that must fire and benign look-alikes that must not.
 - **An attack simulator** that performs the real misconfigurations in a sandbox account and measures the response.
 
 ## How it works
@@ -30,6 +31,22 @@ flowchart LR
 2. EventBridge rules match only the API calls a rule inspects. The list is generated from the rule registry (`terraform/events.json`), and a test fails if the two drift apart.
 3. The Lambda runs the matching rules. Each rule is a small pure function over the CloudTrail event.
 4. A finding is logged as JSON, published to SNS, and remediated if the mode allows.
+
+## Posture scan
+
+The event rules only see changes made after deployment. A second Lambda runs on a schedule (daily by default), reads the account's current state in every enabled region, and emails one digest of what is already wrong: root without MFA, console users without MFA, old access keys, public buckets, security groups open to the internet, VPCs without flow logs, public snapshots and more.
+
+- **Read-only.** It reports and recommends a fix; it never changes anything.
+- **Its own role.** The scan has a separate read-only role, so the responder's role stays free of read access.
+- **A failed check is reported, not fatal.** One denied API call does not hide the other findings.
+
+Run it on demand against your current credentials:
+
+```sh
+PYTHONPATH=src python -m guardian.scan
+```
+
+Set `scan_schedule = ""` to leave it out, or `scan_regions` to limit the regions it covers.
 
 ## Design decisions
 

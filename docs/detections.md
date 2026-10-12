@@ -41,3 +41,29 @@ Generated from the rule registry with `python -m guardian.manifest markdown`. Do
 | ID-002 | Console sign-in without MFA | MEDIUM | T1078.004 | signin: ConsoleLogin | Alert only |
 | ID-003 | Failed root console sign-in | HIGH | T1110 | signin: ConsoleLogin | Alert only |
 | ID-004 | Root user API activity | HIGH | T1078.004 | any API call by the root user | Alert only |
+
+## Posture checks
+
+Run on a schedule against the account's current state, to find what was already
+misconfigured before the event rules above were deployed. Read-only: they report, never fix.
+
+16 checks.
+
+| ID | Check | Severity | ATT&CK | Scope | Recommended fix |
+|---|---|---|---|---|---|
+| POS-001 | Root user has no MFA | CRITICAL | T1078.004 | account | Assign an MFA device to the root user |
+| POS-002 | Root user has access keys | CRITICAL | T1078.004 | account | Delete the root access keys |
+| POS-003 | Console user without MFA | HIGH | T1078.004 | account | Require MFA for the user or remove its console password |
+| POS-004 | Access key older than 90 days | MEDIUM | T1078.004 | account | Rotate or delete the key |
+| POS-005 | Administrator access attached directly to a user | HIGH | T1098.003 | account | Grant admin through a role the user assumes with MFA |
+| POS-006 | Account password policy missing or weak | MEDIUM | T1556 | account | Set a password policy with a minimum length of 14 |
+| POS-007 | Account-level S3 public access block missing | HIGH | T1530 | account | Turn on all four account-level public access block settings |
+| POS-008 | S3 bucket is public | CRITICAL | T1530 | account | Remove the public statement from the bucket policy |
+| POS-009 | No CloudTrail trail is logging | CRITICAL | T1562.008 | account | Create a multi-region trail and start logging |
+| POS-010 | Security group open to the internet | CRITICAL | T1190 | every region | Restrict the ingress rule to known addresses |
+| POS-011 | VPC without flow logs | MEDIUM | T1562.008 | every region | Enable flow logs for the VPC |
+| POS-012 | EBS encryption by default is off | MEDIUM | T1562.001 | every region | Enable EBS encryption by default in the region |
+| POS-013 | GuardDuty is not enabled | MEDIUM | T1562.001 | every region | Enable GuardDuty in the region |
+| POS-014 | EBS snapshot is public | CRITICAL | T1537 | every region | Remove public sharing from the snapshot |
+| POS-015 | AMI is public | HIGH | T1537 | every region | Make the image private |
+| POS-016 | RDS instance is publicly accessible | HIGH | T1190 | every region | Turn off public accessibility for the instance |

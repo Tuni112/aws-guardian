@@ -20,3 +20,7 @@ output "event_rules" {
 output "remediation_mode" {
   value = var.remediation_mode
 }
+
+output "scan_function" {
+  value = local.scan ? aws_lambda_function.scan[0].function_name : null
+}
