@@ -7,7 +7,7 @@ When someone opens SSH to the internet, makes a bucket public, attaches `Adminis
 - **35 detections** across logging, S3, network, data exposure, IAM and root usage. 20 of them fix the problem automatically; the rest alert only. Full list: [docs/detections.md](docs/detections.md).
 - **Mapped to MITRE ATT&CK** (cloud matrix), one or more technique ids per rule.
 - **One `terraform apply`** to deploy: trail, event routing, Lambda, least-privilege role, alert topic and a cost budget.
-- **92 unit tests**, each rule tested with an event that must fire and benign look-alikes that must not.
+- **93 unit tests**, each rule tested with an event that must fire and benign look-alikes that must not.
 - **An attack simulator** that performs the real misconfigurations in a sandbox account and measures the response.
 
 ## How it works
@@ -68,6 +68,25 @@ python simulate/attack.py               # run every scenario against the deploye
 ```
 
 The simulator creates throwaway resources, misconfigures them, waits for Guardian to respond, then cleans up and prints each finding with its response latency.
+
+## Measured results
+
+From a live run in enforce mode. Each time is from the simulator making the bad change to observing it undone.
+
+| Rule | Simulated change | Reverted after |
+|---|---|---|
+| NET-001 | Open SSH to the internet | 10.2s |
+| NET-002 | Open PostgreSQL to the internet | 3.8s |
+| NET-003 | Open every port to the internet | 4.0s |
+| LOG-008 | Create a VPC with no flow logs | 6.2s |
+| S3-001 | Delete a bucket's public access block | 9.3s |
+| IAM-001 | Attach AdministratorAccess to a user | 3.3s |
+| IAM-002 | Add an inline allow-everything policy | 3.2s |
+| IAM-003 | Create an access key for another user | 3.2s |
+| LOG-001 | Stop CloudTrail logging | 3.2s |
+| IAM-005 | Set a console password for another user | alert only, detected in 3.0s |
+
+The other 25 rules are unit-tested but have not yet been exercised against live events. Events in the first minute after a fresh deploy can be missed while the new trail starts delivering.
 
 ## Adding a detection
 
