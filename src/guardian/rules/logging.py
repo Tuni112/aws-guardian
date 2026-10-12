@@ -90,8 +90,10 @@ def restart_config_recorder(event: dict, detection: Detection, clients: Clients)
 
 def flow_logs_deleted(event: dict):
     request = params(event).get("DeleteFlowLogsRequest") or params(event)
-    ids = [i for i in items(request.get("FlowLogId")) if isinstance(i, str)]
-    ids = ids or [i.get("content", "") for i in items(request.get("FlowLogId")) if isinstance(i, dict)]
+    node = request.get("FlowLogId")
+    # CloudTrail logs one id as {"tag": 1, "content": "fl-..."} and several as a list of those.
+    entries = [node] if isinstance(node, dict) and "content" in node else items(node)
+    ids = [e if isinstance(e, str) else e.get("content", "") for e in entries if isinstance(e, (str, dict))]
     return Detection(", ".join(filter(None, ids)) or "unknown-flow-log", "VPC flow logs were deleted")
 
 

@@ -547,3 +547,12 @@ def test_flow_logs_go_to_the_configured_bucket(clients, calls):
             "LogDestination": FLOW_LOG_BUCKET,
         }
     ]
+
+
+def test_flow_log_id_is_read_from_the_shape_cloudtrail_really_logs():
+    from guardian.rules.logging import flow_logs_deleted
+
+    single = {"DeleteFlowLogsRequest": {"FlowLogId": {"tag": 1, "content": "fl-0aa2"}}}
+    several = {"DeleteFlowLogsRequest": {"FlowLogId": [{"tag": 1, "content": "fl-1"}, {"tag": 2, "content": "fl-2"}]}}
+    assert flow_logs_deleted(make_event("ec2.amazonaws.com", "DeleteFlowLogs", single)).resource == "fl-0aa2"
+    assert flow_logs_deleted(make_event("ec2.amazonaws.com", "DeleteFlowLogs", several)).resource == "fl-1, fl-2"
