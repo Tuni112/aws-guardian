@@ -195,6 +195,11 @@ class Sandbox:
         return f"trail {trail}", attack, reverted, cleanup
 
     # ── evidence ─────────────────────────────────────────────────────────
+    def mode(self) -> str:
+        """Guardian's deployed remediation mode, read from the Lambda's environment."""
+        config = self.session.client("lambda").get_function_configuration(FunctionName=self.name)
+        return config.get("Environment", {}).get("Variables", {}).get("REMEDIATION_MODE", "dry_run")
+
     def findings_since(self, start_ms: int) -> list[dict]:
         found, token = [], None
         while True:
@@ -265,7 +270,9 @@ def main() -> int:
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--region", default="us-east-1")
     parser.add_argument("--name", default="aws-guardian", help="the Terraform `name` variable")
-    parser.add_argument("--wait", type=int, default=180, help="seconds to wait for each remediation")
+    parser.add_argument(
+        "--wait", type=int, help="seconds to wait for each remediation; default 180 in enforce mode, else 15"
+    )
     parser.add_argument("--json", help="write results to this file")
     args = parser.parse_args()
 
@@ -278,9 +285,12 @@ def main() -> int:
         parser.error(f"unknown scenario(s): {', '.join(unknown)}")
 
     sandbox = Sandbox(args.region, args.name)
-    print(f"Account {sandbox.account}, region {args.region}. Simulated attacks start now.")
+    mode = sandbox.mode()
+    # Outside enforce mode nothing gets reverted, so there is no point waiting long for it.
+    wait = args.wait if args.wait is not None else (180 if mode == "enforce" else 15)
+    print(f"Account {sandbox.account}, region {args.region}, Guardian mode {mode}. Simulated attacks start now.")
     start_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
-    results = [run(sandbox, key, args.wait) for key in (args.scenarios or SCENARIOS)]
+    results = [run(sandbox, key, wait) for key in (args.scenarios or SCENARIOS)]
 
     print("\nWaiting 60s for the last findings to reach CloudWatch Logs...")
     time.sleep(60)
